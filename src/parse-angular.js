@@ -7,7 +7,7 @@
 		var module = angular.module('parse-angular', []);
 
 		module.factory('parseAngularFactory', function(){
-			factory = {};
+			var factory = {};
 			var beforeFunction;
 			var afterFunction;
 			var afterErrorFunction;
@@ -30,17 +30,15 @@
 					beforeFunction();
 				}
 			};
-			factory.afterFunction = function() {
+			factory.afterErrorFunction = function(error) {
 				if (afterErrorFunction) {
-					afterErrorFunction();
+					afterErrorFunction(error);
 				}
 			};
 			return factory;
 		});
 
-		module.run(['$q', '$window', function($q, $window, parseAngularFactory){
-
-
+		module.run(['$q', '$window', 'parseAngularFactory', function($q, $window, parseAngularFactory){
 			// Process only if Parse exist on the global window, do nothing otherwise
 			if (!angular.isUndefined($window.Parse) && angular.isObject($window.Parse)) {
 
@@ -109,7 +107,7 @@
 							}, function(err){
 								var defer = $q.defer();
 								defer.reject(err);
-								parseAngularFactory.afterErrorFunction();
+								parseAngularFactory.afterErrorFunction(err);
 								return defer.promise;
 							});
 						};
@@ -133,7 +131,7 @@
 							}, function(err){
 								var defer = $q.defer();
 								defer.reject(err);
-								parseAngularFactory.afterErrorFunction();
+								parseAngularFactory.afterErrorFunction(err);
 								return defer.promise;
 							});
 
