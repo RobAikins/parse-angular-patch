@@ -6,7 +6,39 @@
 
 		var module = angular.module('parse-angular', []);
 
-		module.run(['$q', '$window', function($q, $window){
+		module.factory('parseAngularFactory', function(){
+			factory = {};
+			var beforeFunction;
+			var afterFunction;
+			var afterErrorFunction;
+			factory.setBeforeFunction = function(newFunction) {
+				beforeFunction = newFunction;
+			};
+			factory.setAfterFunction = function(newFunction) {
+				afterFunction = newFunction;
+			};
+			factory.setAfterErrorFunction = function(newFunction) {
+				afterErrorFunction = newFunction;
+			};
+			factory.afterFunction = function() {
+				if (afterFunction) {
+					afterFunction();
+				}
+			};
+			factory.beforeFunction = function() {
+				if (beforeFunction) {
+					beforeFunction();
+				}
+			};
+			factory.afterFunction = function() {
+				if (afterErrorFunction) {
+					afterErrorFunction();
+				}
+			};
+			return factory;
+		});
+
+		module.run(['$q', '$window', function($q, $window, parseAngularFactory){
 
 
 			// Process only if Parse exist on the global window, do nothing otherwise
@@ -67,21 +99,20 @@
 
 						// Overwrite original function by wrapping it with $q
 						Parse[currentClass].prototype[method] = function() {
-
+							parseAngularFactory.beforeFunction();
 							return origMethod.apply(this, arguments)
 							.then(function(data){
 								var defer = $q.defer();
 								defer.resolve(data);
+								parseAngularFactory.afterFunction();
 								return defer.promise;
 							}, function(err){
 								var defer = $q.defer();
 								defer.reject(err);
+								parseAngularFactory.afterErrorFunction();
 								return defer.promise;
 							});
-
-
 						};
-
 					});
 
 
@@ -92,15 +123,17 @@
 
 						// Overwrite original function by wrapping it with $q
 						Parse[currentClass][method] = function() {
-
+							parseAngularFactory.beforeFunction();
 							return origMethod.apply(this, arguments)
 							.then(function(data){
 								var defer = $q.defer();
 								defer.resolve(data);
+								parseAngularFactory.afterFunction();
 								return defer.promise;
 							}, function(err){
 								var defer = $q.defer();
 								defer.reject(err);
+								parseAngularFactory.afterErrorFunction();
 								return defer.promise;
 							});
 
